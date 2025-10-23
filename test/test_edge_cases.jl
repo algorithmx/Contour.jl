@@ -250,7 +250,7 @@ using .TestHelpers
             y = [0.0, 1.0]
             z = [1.0 2.0; 3.0 4.0]
 
-            result = Contour.contours(x, y, z, [])
+            result = Contour.contours(x, y, z, Float64[])
             @test result isa Contour.ContourCollection
             @test length(result.contours) == 0
         end
