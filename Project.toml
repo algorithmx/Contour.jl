@@ -2,8 +2,12 @@ name = "Contour"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
 version = "0.6.3"
 
+[deps]
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+
 [compat]
 Aqua = "0.8"
+JET = "0.10.8"
 LinearAlgebra = "1"
 OffsetArrays = "1"
 StaticArrays = "1"
