@@ -27,11 +27,11 @@ Curve2(::Type{T}) where {T} = Curve2(T[])
 show(io::IO, ::MIME"text/plain", c2::Curve2) = write(io, "$(typeof(c2))\n  with $(length(c2.vertices)-1) vertices")
 show(io::IO, ::MIME"text/plain", c2s::Vector{Curve2{T}}) where {T} = write(io, "$(typeof(c2s))\n  $(length(c2s)) contour line(s)")
 
-struct ContourLevel{T, L}
+struct ContourLevel{T,L}
     level::L
     lines::Vector{Curve2{T}}
 end
-ContourLevel(h::T) where {T <: AbstractFloat} = ContourLevel(h, Curve2{NTuple{2,T}}[])
+ContourLevel(h::T) where {T<:AbstractFloat} = ContourLevel(h, Curve2{NTuple{2,T}}[])
 ContourLevel(h::T) where {T} = ContourLevel(Float64(h))
 show(io::IO, ::MIME"text/plain", cl::ContourLevel) = write(io, "$(typeof(cl))\n  at $(level(cl)) with $(length(lines(cl))) line(s)")
 show(io::IO, ::MIME"text/plain", cls::Vector{ContourLevel{T}}) where {T} = write(io, "$(typeof(cls))\n  $(length(cls)) contour level(s)")
@@ -70,7 +70,7 @@ You'll usually call [`lines`](@ref) on the output of `contour`, and then iterate
 over the result.
 """
 function contour(x, y, z, level::Number; VT=nothing)
-    if !(axes(x) == (axes(z,1),) && axes(y) == (axes(z,2),) || axes(x) == axes(y) == axes(z))
+    if !(axes(x) == (axes(z, 1),) && axes(y) == (axes(z, 2),) || axes(x) == axes(y) == axes(z))
         throw(ArgumentError("Incompatible input axes in `Contour.contour`."))
     end
     ET = promote_type(map(eltype, (x, y, z))...)
@@ -78,6 +78,7 @@ function contour(x, y, z, level::Number; VT=nothing)
     VT = VT === nothing ? NTuple{2,ET} : VT
     trace_contour(x, y, z, level, get_level_cells(z, level), VT)
 end
+
 
 """
 `contours` returns a set of isolines.
@@ -91,16 +92,7 @@ function contours end
 Trace the contour levels indicated by the `levels` argument.
 The extracted vertex type maybe be specified by the `VT` keyword.
 """
-function contours(x, y, z, levels; VT=nothing)
-    ET = promote_type(map(eltype, (x, y, z))...)
-    ET = ET <: Integer ? Float64 : ET
-    VT = VT === nothing ? NTuple{2,ET} : VT
-
-    if isempty(levels)
-        return ContourCollection(Vector{ContourLevel{VT, ET}}())
-    end
-    return ContourCollection([contour(x, y, z, l; VT=VT) for l in levels])
-end
+contours(x, y, z, levels; VT=nothing) = ContourCollection([contour(x, y, z, l; VT=VT) for l in levels])
 
 """
     contours(x,y,z,Nlevels::Integer;[VT])
@@ -109,7 +101,7 @@ Trace `Nlevels` contour levels at heights
 chosen by the library (using the  [`contourlevels`](@ref) function).
 The extracted vertex type maybe be specified by the `VT` keyword.
 """
-function contours(x, y, z, Nlevels::Integer;VT=nothing)
+function contours(x, y, z, Nlevels::Integer; VT=nothing)
     contours(x, y, z, contourlevels(z, Nlevels); VT=VT)
 end
 
@@ -125,7 +117,7 @@ levels to trace.
 function contourlevels(z, n)
     zmin, zmax = extrema(z)
     dz = (zmax - zmin) / (n + 1)
-    range(zmin + dz; step = dz, length = n)
+    range(zmin + dz; step=dz, length=n)
 end
 
 """
@@ -172,10 +164,10 @@ vertices(c::Curve2) = c.vertices
 # Note that there are two cases where there are two
 # lines crossing through the same cell: 0b0101, 0b1010.
 const N, S, E, W = (UInt8(1)), (UInt8(2)), (UInt8(4)), (UInt8(8))
-const NS, NE, NW = N|S, N|E, N|W
-const SN, SE, SW = S|N, S|E, S|W
-const EN, ES, EW = E|N, E|S, E|W
-const WN, WS, WE = W|N, W|S, W|E
+const NS, NE, NW = N | S, N | E, N | W
+const SN, SE, SW = S | N, S | E, S | W
+const EN, ES, EW = E | N, E | S, E | W
+const WN, WS, WE = W | N, W | S, W | E
 const NWSE = NW | 0x10 # special (ambiguous case)
 const NESW = NE | 0x10 # special (ambiguous case)
 
@@ -211,8 +203,8 @@ function get_next_edge!(cells::Dict, key, entry_edge::UInt8)
 end
 
 # N, S, E, W
-const next_map = ((0,1), (0,-1), (1,0), (-1,0))
-const next_edge = (S,N,W,E)
+const next_map = ((0, 1), (0, -1), (1, 0), (-1, 0))
+const next_edge = (S, N, W, E)
 
 @inline function advance_edge(ind, edge)
     n = trailing_zeros(edge) + 1
@@ -244,7 +236,7 @@ function get_level_cells(z, h::Number)
 
     @inbounds for xi in first(x_ax):last(x_ax)-1
         for yi in first(y_ax):last(y_ax)-1
-            elts = (z[xi, yi], z[xi + 1, yi], z[xi + 1, yi + 1], z[xi, yi + 1])
+            elts = (z[xi, yi], z[xi+1, yi], z[xi+1, yi+1], z[xi, yi+1])
             case = _get_case(elts, h)
 
             # Contour does not go through these cells
@@ -255,9 +247,9 @@ function get_level_cells(z, h::Number)
             # Process ambiguous cells (case 5 and 10) using
             # a bilinear interpolation of the cell-center value.
             if case == 0x05
-                cells[(xi, yi)] = 0.25*sum(elts) >= h ? NWSE : NESW
+                cells[(xi, yi)] = 0.25 * sum(elts) >= h ? NWSE : NESW
             elseif case == 0x0a
-                cells[(xi, yi)] = 0.25*sum(elts) >= h ? NESW : NWSE
+                cells[(xi, yi)] = 0.25 * sum(elts) >= h ? NESW : NWSE
             else
                 cells[(xi, yi)] = edge_LUT[case]
             end
@@ -270,7 +262,7 @@ end
 
 # Given a cell and a starting edge, we follow the contour line until we either
 # hit the boundary of the input data, or we form a closed contour.
-function chase!(cells, curve, x, y, z, h, start, entry_edge, xi_range, yi_range, ::Type{VT}) where VT
+function chase!(cells, curve, x, y, z, h, start, entry_edge, xi_range, yi_range, ::Type{VT}) where {VT}
 
     ind = start
 
@@ -288,14 +280,14 @@ function chase!(cells, curve, x, y, z, h, start, entry_edge, xi_range, yi_range,
         ind, entry_edge = advance_edge(ind, exit_edge)
 
         !((ind[1], ind[2], entry_edge) != (start[1], start[2], loopback_edge) &&
-           ind[2] ∈ yi_range && ind[1] ∈ xi_range) && break
+          ind[2] ∈ yi_range && ind[1] ∈ xi_range) && break
     end
 
     return ind
 end
 
 
-function trace_contour(x, y, z, h::Number, cells::Dict, VT)
+function trace_contour(x, y, z, h::Number, cells::Dict, ::Type{VT}) where {VT}
 
     contours = ContourLevel(h, Curve2{VT}[])
 
