@@ -48,7 +48,7 @@ level(cl::ContourLevel) = cl.level
 struct ContourCollection{Tlevel<:ContourLevel}
     contours::Vector{Tlevel}
 end
-ContourCollection() = ContourCollection(Float64)
+ContourCollection() = ContourCollection(ContourLevel{Float64}[])
 ContourCollection(::Type{Tlevel}) where {Tlevel} = ContourCollection(ContourLevel{Tlevel}[])
 show(io::IO, ::MIME"text/plain", cc::ContourCollection) = write(io, "$(typeof(cc))\n with $(length(levels(cc))) level(s).")
 
@@ -91,7 +91,16 @@ function contours end
 Trace the contour levels indicated by the `levels` argument.
 The extracted vertex type maybe be specified by the `VT` keyword.
 """
-contours(x, y, z, levels; VT=nothing) = ContourCollection([contour(x, y, z, l; VT=VT) for l in levels])
+function contours(x, y, z, levels; VT=nothing)
+    ET = promote_type(map(eltype, (x, y, z))...)
+    ET = ET <: Integer ? Float64 : ET
+    VT = VT === nothing ? NTuple{2,ET} : VT
+
+    if isempty(levels)
+        return ContourCollection(Vector{ContourLevel{VT, ET}}())
+    end
+    return ContourCollection([contour(x, y, z, l; VT=VT) for l in levels])
+end
 
 """
     contours(x,y,z,Nlevels::Integer;[VT])
